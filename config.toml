@@ -1,0 +1,131 @@
+# Multi-RPC Configuration File
+# All fields shown here are required for the application to start successfully
+
+# Server configuration
+bind_address = "0.0.0.0:8080"
+health_check_interval = 30  # seconds
+request_timeout = 10        # seconds
+max_retries = 3
+
+# Authentication configuration
+[auth]
+enabled = false
+jwt_secret = "your_jwt_secret_here_change_in_production_min_32_chars"
+token_expiry = 3600  # seconds
+require_auth_for_admin = false
+
+[auth.api_keys]
+
+# Cache configuration
+[cache]
+enabled = false
+redis_url = "redis://localhost:6379"
+default_ttl = 60           # seconds
+max_cache_size = 104857600 # 100MB in bytes
+cluster_mode = false
+
+# Method-specific TTLs
+[cache.method_ttls]
+getGenesisHash = 3600
+getAccountInfo = 10
+getBalance = 5
+getBlockHeight = 2
+
+# Consensus configuration
+[consensus]
+enabled = false
+min_confirmations = 2
+timeout_ms = 5000
+critical_methods = ["sendTransaction", "getAccountInfo", "getBalance"]
+consensus_threshold = 0.67  # 67% agreement required
+max_deviation = 0.1         # 10% maximum deviation allowed
+
+# Geo-routing configuration
+[geo]
+enabled = false
+geoip_database_path = "./GeoLite2-City.mmdb"
+prefer_local_endpoints = true
+max_latency_penalty_ms = 200
+
+# Region weights for geo-routing
+[geo.region_weights]
+"us-east" = 1.0
+"us-west" = 1.0
+"eu" = 0.8
+"asia" = 0.7
+
+# Metrics configuration
+[metrics]
+enabled = true
+prometheus_enabled = true
+detailed_logging = false
+retention_days = 30
+
+# Rate limiting configuration
+[rate_limiting]
+enabled = false
+default_rate = 1000
+default_burst = 100
+
+[rate_limiting.per_method_limits]
+
+[rate_limiting.per_ip_limits]
+
+# WebSocket configuration
+[websocket]
+enabled = true
+max_connections = 1000
+ping_interval = 30           # seconds
+connection_timeout = 300     # seconds
+max_subscriptions_per_connection = 100
+
+# Admin panel configuration
+[admin]
+enabled = true
+username = "admin"
+password_hash = "admin123"  # Change this! Default: admin123
+session_timeout = 3600
+
+# Endpoint discovery configuration
+[discovery]
+enabled = false
+discovery_interval = 300  # seconds
+test_methods = ["getHealth", "getSlot"]
+min_score_threshold = 0.7
+auto_add_endpoints = false
+cluster_rpc_urls = ["https://api.mainnet-beta.solana.com"]
+
+# RPC Endpoints
+[[endpoints]]
+url = "https://api.mainnet-beta.solana.com"
+name = "Solana Labs"
+weight = 100
+priority = 1
+region = "us-east"
+latitude = 40.7128
+longitude = -74.0060
+features = ["full", "websocket"]
+max_connections = 100
+# auth_token = "optional_auth_token"  # Optional
+
+[[endpoints]]
+url = "https://rpc.ankr.com/solana"
+name = "Ankr"
+weight = 85
+priority = 3
+region = "global"
+# latitude = 0.0     # Optional
+# longitude = 0.0    # Optional
+features = ["full"]
+max_connections = 50
+# auth_token = "optional_auth_token"  # Optional
+
+# Add more endpoints as needed
+# [[endpoints]]
+# url = "https://api.devnet.solana.com"
+# name = "Solana Devnet"
+# weight = 50
+# priority = 5
+# region = "us-west"
+# features = ["full", "websocket"]
+# max_connections = 25

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ title }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .logs { background: #f0f0f0; padding: 20px; border-radius: 8px; font-family: monospace; }
+        .log-entry { margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <h1>{{ title }}</h1>
+    <div class="logs">
+        {% for log in logs %}
+        <div class="log-entry">{{ log }}</div>
+        {% endfor %}
+    </div>
+    <nav>
+        <a href="/admin">Dashboard</a> |
+        <a href="/admin/endpoints">Endpoints</a> |
+        <a href="/admin/config">Configuration</a>
+    </nav>
+</body>
+</html>

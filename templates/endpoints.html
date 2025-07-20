@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ title }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f0f0f0; }
+        .status-healthy { color: green; }
+        .status-degraded { color: orange; }
+        .status-unhealthy { color: red; }
+    </style>
+</head>
+<body>
+    <h1>{{ title }}</h1>
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>URL</th>
+            <th>Status</th>
+            <th>Score</th>
+            <th>Response Time</th>
+            <th>Success Rate</th>
+        </tr>
+        {% for endpoint in endpoints %}
+        <tr>
+            <td>{{ endpoint.name }}</td>
+            <td>{{ endpoint.url }}</td>
+            <td class="status-{{ endpoint.status|lower }}">{{ endpoint.status }}</td>
+            <td>{{ endpoint.score.overall_grade }}</td>
+            <td>{{ endpoint.score.avg_response_time }}ms</td>
+            <td>{{ endpoint.score.success_rate }}%</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <nav>
+        <a href="/admin">Dashboard</a> |
+        <a href="/admin/config">Configuration</a> |
+        <a href="/admin/logs">Logs</a>
+    </nav>
+</body>
+</html>

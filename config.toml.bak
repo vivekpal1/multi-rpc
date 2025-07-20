@@ -1,0 +1,119 @@
+# Multi-RPC Configuration
+
+# Server binding address
+bind_address = "0.0.0.0:8080"
+
+# Health check interval in seconds
+health_check_interval = 30
+
+# Request timeout in seconds
+request_timeout = 10
+
+# Maximum retry attempts
+max_retries = 3
+
+# Authentication Configuration
+[auth]
+enabled = false
+require_auth_for_admin = false
+jwt_secret = "your-secret-key-here"
+token_expiry = 3600
+
+[auth.api_keys]
+
+# Cache Configuration
+[cache]
+enabled = false
+redis_url = "redis://localhost:6379"
+default_ttl = 60
+max_cache_size = 10000
+cluster_mode = false
+
+[cache.method_ttls]
+
+# Consensus Configuration
+[consensus]
+enabled = false
+min_confirmations = 2
+timeout_ms = 5000
+critical_methods = []
+consensus_threshold = 0.66
+max_deviation = 0.1
+
+# Geographic Routing Configuration
+[geo]
+enabled = false
+geoip_database_path = ""
+prefer_local_endpoints = true
+max_latency_penalty_ms = 100
+
+[geo.region_weights]
+
+# Metrics Configuration
+[metrics]
+enabled = true
+export_interval = 60
+
+# Rate Limiting Configuration
+[rate_limiting]
+enabled = false
+global_rate = 100
+global_burst = 200
+window_seconds = 60
+
+[rate_limiting.per_method_limits]
+
+# WebSocket Configuration
+[websocket]
+enabled = true
+max_connections = 1000
+ping_interval = 30
+subscription_ttl = 3600
+
+# Admin Configuration
+[admin]
+username = "admin"
+password_hash = "admin123"
+
+# Discovery Configuration
+[discovery]
+enabled = false
+interval = 300
+solana_fm_url = ""
+discovery_apis = []
+
+# RPC Endpoints Configuration
+[[endpoints]]
+url = "https://api.mainnet-beta.solana.com"
+name = "Solana Labs"
+weight = 100
+priority = 1
+features = ["full"]
+
+[[endpoints]]
+url = "https://solana-api.projectserum.com"
+name = "Project Serum"
+weight = 90
+priority = 2
+features = ["full"]
+
+[[endpoints]]
+url = "https://rpc.ankr.com/solana"
+name = "Ankr"
+weight = 85
+priority = 3
+features = ["full"]
+
+[[endpoints]]
+url = "https://api.mainnet.rpcpool.com"
+name = "RPC Pool"
+weight = 80
+priority = 4
+features = ["full"]
+
+[[endpoints]]
+url = "https://ssc-dao.genesysgo.net"
+name = "GenesysGo"
+weight = 75
+priority = 5
+features = ["full"]

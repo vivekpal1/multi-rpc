@@ -1,0 +1,269 @@
+groups:
+  - name: multi-rpc-alerts
+    rules:
+      # Service availability alerts
+      - alert: MultiRPCDown
+        expr: up{job="multi-rpc"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: multi-rpc
+        annotations:
+          summary: "Multi-RPC service is down"
+          description: "Multi-RPC service {{ $labels.instance }} has been down for more than 1 minute."
+
+      - alert: MultiRPCHighErrorRate
+        expr: (rate(multi_rpc_errors_total[5m]) / rate(multi_rpc_requests_total[5m])) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+          service: multi-rpc
+        annotations:
+          summary: "High error rate detected"
+          description: "Multi-RPC error rate is {{ $value | humanizePercentage }} for the last 5 minutes."
+
+      - alert: MultiRPCResponseTimeSlow
+        expr: histogram_quantile(0.95, rate(multi_rpc_request_duration_seconds_bucket[5m])) > 2
+        for: 3m
+        labels:
+          severity: warning
+          service: multi-rpc
+        annotations:
+          summary: "Slow response times detected"
+          description: "95th percentile response time is {{ $value }}s for the last 5 minutes."
+
+      # Endpoint health alerts
+      - alert: AllEndpointsUnhealthy
+        expr: multi_rpc_endpoints_healthy == 0
+        for: 30s
+        labels:
+          severity: critical
+          service: multi-rpc
+        annotations:
+          summary: "All RPC endpoints are unhealthy"
+          description: "No healthy endpoints available. Service degradation imminent."
+
+      - alert: LowHealthyEndpoints
+        expr: (multi_rpc_endpoints_healthy / multi_rpc_endpoints_total) < 0.5
+        for: 1m
+        labels:
+          severity: warning
+          service: multi-rpc
+        annotations:
+          summary: "Low number of healthy endpoints"
+          description: "Only {{ $value | humanizePercentage }} of endpoints are healthy."
+
+      - alert: EndpointConsistentlyFailing
+        expr: increase(multi_rpc_endpoint_failures_total[10m]) > 50
+        for: 5m
+        labels:
+          severity: warning
+          service: multi-rpc
+        annotations:
+          summary: "Endpoint consistently failing"
+          description: "Endpoint {{ $labels.endpoint }} has failed {{ $value }} times in the last 10 minutes."
+
+      # Consensus alerts
+      - alert: ConsensusFailureRate
+        expr: (rate(multi_rpc_consensus_failures_total[5m]) / rate(multi_rpc_consensus_requests_total[5m])) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          service: multi-rpc
+        annotations:
+          summary: "High consensus failure rate"
+          description: "Consensus failure rate is {{ $value | humanizePercentage }} for the last 5 minutes."
+
+      - alert: ConsensusTimeout
+        expr: histogram_quantile(0.95, rate(multi_rpc_consensus_duration_seconds_bucket[5m])) > 10
+        for: 3m
+        labels:
+          severity: warning
+          service: multi-rpc
+        annotations:
+          summary: "Consensus operations timing out"
+          description: "95th percentile consensus time is {{ $value }}s, indicating timeouts."
+
+      # Cache alerts
+      - alert: CacheHitRateLow
+        expr: (multi_rpc_cache_hits_total / (multi_rpc_cache_hits_total + multi_rpc_cache_misses_total)) < 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: multi-rpc
+        annotations:
+          summary: "Low cache hit rate"
+          description: "Cache hit rate is {{ $value | humanizePercentage }}, performance may be degraded."
+
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: redis
+        annotations:
+          summary: "Redis is down"
+          description: "Redis cache service is unavailable."
+
+      # Authentication alerts
+      - alert: HighAuthFailureRate
+        expr: (rate(multi_rpc_auth_failures_total[5m]) / rate(multi_rpc_auth_requests_total[5m])) > 0.2
+        for: 2m
+        labels:
+          severity: warning
+          service: multi-rpc
+        annotations:
+          summary: "High authentication failure rate"
+          description: "Auth failure rate is {{ $value | humanizePercentage }}, possible attack."
+
+      - alert: RateLimitingActive
+        expr: rate(multi_rpc_rate_limited_requests_total[5m]) > 10
+        for: 1m
+        labels:
+          severity: info
+          service: multi-rpc
+        annotations:
+          summary: "Rate limiting is active"
+          description: "{{ $value }} requests per second are being rate limited."
+
+      # WebSocket alerts
+      - alert: WebSocketConnectionsHigh
+        expr: multi_rpc_websocket_connections > 800
+        for: 2m
+        labels:
+          severity: warning
+          service: multi-rpc
+        annotations:
+          summary: "High number of WebSocket connections"
+          description: "{{ $value }} WebSocket connections active, approaching limit."
+
+      # Resource alerts
+      - alert: HighMemoryUsage
+        expr: (process_resident_memory_bytes{job="multi-rpc"} / 1024 / 1024) > 400
+        for: 5m
+        labels:
+          severity: warning
+          service: multi-rpc
+        annotations:
+          summary: "High memory usage"
+          description: "Multi-RPC is using {{ $value }}MB of memory."
+
+      - alert: HighCPUUsage
+        expr: rate(process_cpu_seconds_total{job="multi-rpc"}[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: multi-rpc
+        annotations:
+          summary: "High CPU usage"
+          description: "Multi-RPC CPU usage is {{ $value | humanizePercentage }}."
+
+  - name: infrastructure-alerts
+    rules:
+      # Network alerts
+      - alert: NetworkLatencyHigh
+        expr: histogram_quantile(0.95, rate(multi_rpc_request_duration_seconds_bucket[5m])) > 1
+        for: 3m
+        labels:
+          severity: warning
+          service: network
+        annotations:
+          summary: "High network latency detected"
+          description: "95th percentile request latency is {{ $value }}s."
+
+      # External endpoint alerts
+      - alert: SolanaEndpointDown
+        expr: probe_success{job="blackbox-http"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: solana-endpoint
+        annotations:
+          summary: "Solana endpoint is down"
+          description: "Endpoint {{ $labels.instance }} is not responding to health checks."
+
+      - alert: SolanaEndpointSlow
+        expr: probe_duration_seconds{job="blackbox-http"} > 5
+        for: 3m
+        labels:
+          severity: warning
+          service: solana-endpoint
+        annotations:
+          summary: "Solana endpoint is slow"
+          description: "Endpoint {{ $labels.instance }} response time is {{ $value }}s."
+
+  - name: business-metrics-alerts
+    rules:
+      # Transaction volume alerts
+      - alert: RequestVolumeSpike
+        expr: rate(multi_rpc_requests_total[5m]) > (avg_over_time(rate(multi_rpc_requests_total[5m])[1h:5m]) * 3)
+        for: 2m
+        labels:
+          severity: info
+          service: multi-rpc
+        annotations:
+          summary: "Request volume spike detected"
+          description: "Request rate is {{ $value }} req/s, 3x higher than normal."
+
+      - alert: RequestVolumeDrop
+        expr: rate(multi_rpc_requests_total[5m]) < (avg_over_time(rate(multi_rpc_requests_total[5m])[1h:5m]) * 0.3)
+        for: 5m
+        labels:
+          severity: warning
+          service: multi-rpc
+        annotations:
+          summary: "Request volume significantly dropped"
+          description: "Request rate is {{ $value }} req/s, much lower than normal."
+
+      # Method-specific alerts
+      - alert: HighTransactionFailureRate
+        expr: (rate(multi_rpc_requests_method_sendTransaction_errors[5m]) / rate(multi_rpc_requests_method_sendTransaction_total[5m])) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          service: multi-rpc
+          method: sendTransaction
+        annotations:
+          summary: "High transaction failure rate"
+          description: "sendTransaction method failure rate is {{ $value | humanizePercentage }}."
+
+  - name: security-alerts
+    rules:
+      # Security alerts
+      - alert: UnauthorizedAccessAttempts
+        expr: rate(multi_rpc_auth_failures_total[5m]) > 50
+        for: 1m
+        labels:
+          severity: critical
+          service: multi-rpc
+          type: security
+        annotations:
+          summary: "High number of unauthorized access attempts"
+          description: "{{ $value }} authentication failures per second, possible attack."
+
+      - alert: SuspiciousRequestPattern
+        expr: rate(multi_rpc_errors_total{error_type="invalid_request"}[5m]) > 100
+        for: 2m
+        labels:
+          severity: warning
+          service: multi-rpc
+          type: security
+        annotations:
+          summary: "Suspicious request patterns detected"
+          description: "High rate of invalid requests: {{ $value }} per second."
+
+      - alert: GeographicAnomalyDetected
+        expr: |
+          (
+            sum by (country) (rate(multi_rpc_requests_total[5m])) 
+            / 
+            sum(rate(multi_rpc_requests_total[5m]))
+          ) > 0.8
+        for: 5m
+        labels:
+          severity: info
+          service: multi-rpc
+          type: security
+        annotations:
+          summary: "Geographic request anomaly"
+          description: "{{ $value | humanizePercentage }} of requests from {{ $labels.country }}."
