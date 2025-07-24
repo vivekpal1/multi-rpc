@@ -1,0 +1,140 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User models
+model User {
+  id               String    @id @default(cuid())
+  privyId          String    @unique
+  name             String?
+  email            String?   @unique
+  emailVerified    DateTime?
+  image            String?
+  walletAddress    String?   @unique
+  walletType       String?   // phantom, solflare, etc
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  apiKeys          ApiKey[]
+  usage            Usage[]
+  subscription     Subscription?
+  invoices         Invoice[]
+  webhooks         Webhook[]
+  linkedAccounts   LinkedAccount[]
+}
+
+model LinkedAccount {
+  id              String   @id @default(cuid())
+  userId          String
+  type            String   // wallet, google, twitter
+  address         String?  // wallet address
+  providerId      String?  // google/twitter id
+  metadata        Json?
+  createdAt       DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([type, address])
+  @@unique([type, providerId])
+  @@index([userId])
+}
+
+// Multi-RPC specific models
+model ApiKey {
+  id          String    @id @default(cuid())
+  userId      String
+  name        String
+  key         String    @unique
+  active      Boolean   @default(true)
+  rateLimit   Int       @default(100) // requests per second
+  monthlyLimit BigInt?   // optional monthly request limit
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+
+  user  User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  usage Usage[]
+
+  @@index([key])
+  @@index([userId])
+}
+
+model Usage {
+  id            String   @id @default(cuid())
+  userId        String
+  apiKeyId      String?
+  requests      BigInt   @default(0)
+  successCount  BigInt   @default(0)
+  errorCount    BigInt   @default(0)
+  bytesIn       BigInt   @default(0)
+  bytesOut      BigInt   @default(0)
+  date          DateTime @db.Date
+  createdAt     DateTime @default(now())
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  apiKey ApiKey? @relation(fields: [apiKeyId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+}
+
+model Subscription {
+  id                 String    @id @default(cuid())
+  userId             String    @unique
+  stripeCustomerId   String    @unique
+  stripeSubscriptionId String? @unique
+  stripePriceId      String?
+  status             String    @default("trialing")
+  plan               Plan      @default(FREE)
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum Plan {
+  FREE
+  STARTER
+  PRO
+  ENTERPRISE
+}
+
+model Invoice {
+  id               String   @id @default(cuid())
+  userId           String
+  stripeInvoiceId  String   @unique
+  amount           Int
+  currency         String   @default("usd")
+  status           String
+  paidAt           DateTime?
+  createdAt        DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Webhook {
+  id          String    @id @default(cuid())
+  userId      String
+  url         String
+  secret      String
+  events      String[]  // Array of event types
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  lastError   String?
+  lastErrorAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

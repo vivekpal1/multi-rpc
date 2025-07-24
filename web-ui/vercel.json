@@ -1,0 +1,52 @@
+{
+  "buildCommand": "prisma generate && next build",
+  "framework": "nextjs",
+  "outputDirectory": ".next",
+  "env": {
+    "DATABASE_URL": "@database_url",
+    "NEXTAUTH_URL": "@nextauth_url",
+    "NEXTAUTH_SECRET": "@nextauth_secret",
+    "STRIPE_SECRET_KEY": "@stripe_secret_key",
+    "STRIPE_WEBHOOK_SECRET": "@stripe_webhook_secret",
+    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY": "@stripe_publishable_key",
+    "NEXT_PUBLIC_RPC_URL": "@rpc_url",
+    "RPC_BACKEND_URL": "@rpc_backend_url",
+    "RPC_ADMIN_KEY": "@rpc_admin_key"
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/api/rpc",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "POST, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, X-API-Key"
+        }
+      ]
+    }
+  ],
+  "functions": {
+    "api/rpc/route.ts": {
+      "maxDuration": 30
+    },
+    "api/webhooks/stripe/route.ts": {
+      "maxDuration": 30
+    }
+  }
+}
