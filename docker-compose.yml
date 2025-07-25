@@ -102,7 +102,7 @@ services:
     image: grafana/grafana:latest
     container_name: multi-rpc-grafana
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin123
@@ -114,6 +114,37 @@ services:
     restart: unless-stopped
     depends_on:
       - prometheus
+
+  # Web UI
+  web-ui:
+    build:
+      context: ./web-ui
+      dockerfile: Dockerfile
+    container_name: multi-rpc-web-ui
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_RPC_URL=http://multi-rpc:8080
+      - DATABASE_URL=postgresql://multirpc:your_postgres_password_here@postgres:5432/multirpc
+    env_file:
+      - ./web-ui/.env.local
+    volumes:
+      - ./web-ui/prisma:/app/prisma:ro
+    depends_on:
+      - multi-rpc
+      - postgres
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
 
   nginx:
     image: nginx:alpine

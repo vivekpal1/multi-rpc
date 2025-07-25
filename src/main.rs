@@ -27,6 +27,10 @@ mod rpc;
 mod types;
 mod websocket;
 mod admin;
+mod retry;
+mod bulkhead;
+mod logging;
+mod monitoring;
 
 use auth::{AuthService, AuthMiddleware};
 use cache::CacheService;

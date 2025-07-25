@@ -253,7 +253,15 @@ impl MetricsService {
     }
 
     pub async fn record_endpoint_stats(&self, endpoint_id: Uuid, endpoint_name: &str, response_time: Duration, success: bool) {
-        let endpoint_key = format!("{}_{}", endpoint_name.replace(" ", "_"), endpoint_id.to_string()[..8].to_string());
+        let sanitized_name = endpoint_name
+            .replace("https://", "")
+            .replace("http://", "")
+            .replace("/", "_")
+            .replace(":", "_")
+            .replace(".", "_")
+            .replace("-", "_")
+            .replace(" ", "_");
+        let endpoint_key = format!("{}_{}", sanitized_name, endpoint_id.to_string()[..8].to_string());
         
         // Response time
         {
@@ -270,9 +278,9 @@ impl MetricsService {
         // Success rate (simplified - in practice you'd track this over time)
         {
             let mut success_rates = self.endpoint_success_rate.write().await;
-            let gauge = success_rates.entry(endpoint_key).or_insert_with(|| {
+            let gauge = success_rates.entry(endpoint_key.clone()).or_insert_with(|| {
                 register_gauge!(
-                    format!("multi_rpc_endpoint_success_rate_{}", endpoint_name.replace(" ", "_")),
+                    format!("multi_rpc_endpoint_success_rate_{}", endpoint_key),
                     format!("Success rate for endpoint {}", endpoint_name)
                 ).unwrap_or_else(|_| Gauge::new("fallback", "fallback").unwrap())
             });
