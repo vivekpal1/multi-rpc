@@ -32,10 +32,10 @@
     }
   ],
   "functions": {
-    "web-ui/src/app/api/rpc/route.ts": {
+    "src/app/api/rpc/route.ts": {
       "maxDuration": 30
     },
-    "web-ui/src/app/api/webhooks/stripe/route.ts": {
+    "src/app/api/webhooks/stripe/route.ts": {
       "maxDuration": 30
     }
   }
