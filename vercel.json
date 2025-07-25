@@ -3,7 +3,6 @@
   "installCommand": "cd web-ui && npm install",
   "framework": "nextjs",
   "outputDirectory": "web-ui/.next",
-  "rootDirectory": ".",
   "env": {
     "DATABASE_URL": "@database_url",
     "NEXTAUTH_URL": "@nextauth_url",
