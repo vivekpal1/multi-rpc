@@ -28,8 +28,9 @@ RUN apt-get update && \
 # Copy the binary
 COPY --from=builder /app/target/release/multi-rpc /usr/local/bin/multi-rpc
 
-# Copy default config (optional)
-COPY config.toml /etc/multi-rpc/config.toml
+# Copy default config (optional - only if it exists)
+# This is commented out since config can be provided via environment variables
+# COPY config.toml /etc/multi-rpc/config.toml
 
 # Create non-root user
 RUN useradd -r -s /bin/false multirpc
