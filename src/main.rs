@@ -37,7 +37,7 @@ use cache::CacheService;
 use config::Config;
 use consensus::ConsensusService;
 use endpoints::EndpointManager;
-use error::AppError;
+use crate::error::AppError;
 use geo::GeoService;
 use health::HealthService;
 use metrics::MetricsService;
@@ -181,13 +181,35 @@ async fn main() -> Result<(), AppError> {
         .with_state(app_state);
 
     // Start the server
-    let listener = TcpListener::bind(&config.bind_address).await?;
+    info!("Attempting to bind to address: {}", config.bind_address);
+    let listener = match TcpListener::bind(&config.bind_address).await {
+        Ok(listener) => {
+            info!("Successfully bound to {}", config.bind_address);
+            listener
+        }
+        Err(e) => {
+            error!("Failed to bind to {}: {}", config.bind_address, e);
+            return Err(AppError::from(e));
+        }
+    };
+    
     info!("🚀 Multi-RPC Enterprise server starting on {}", config.bind_address);
     info!("📊 Admin dashboard available at http://{}/admin", config.bind_address);
     info!("🔌 WebSocket endpoint available at ws://{}/ws", config.bind_address);
+    info!("🏥 Health check available at http://{}/health", config.bind_address);
     
-    axum::serve(listener, app).await?;
-    Ok(())
+    info!("Server is ready to accept connections");
+    
+    match axum::serve(listener, app).await {
+        Ok(_) => {
+            info!("Server shut down gracefully");
+            Ok(())
+        }
+        Err(e) => {
+            error!("Server error: {}", e);
+            Err(AppError::from(e))
+        }
+    }
 }
 
 async fn handle_rpc_request(
