@@ -204,14 +204,14 @@ impl Default for Config {
             request_timeout: 10,
             max_retries: 3,
             auth: AuthConfig {
-                enabled: true,
+                enabled: false,  // Disabled by default for easier deployment
                 jwt_secret: "your_jwt_secret_here_change_in_production".to_string(),
                 token_expiry: 3600,
                 api_keys,
-                require_auth_for_admin: true,
+                require_auth_for_admin: false,  // Disabled by default
             },
             cache: CacheConfig {
-                enabled: true,
+                enabled: false,  // Disabled by default - enable when Redis is available
                 redis_url: "redis://localhost:6379".to_string(),
                 default_ttl: 60,
                 max_cache_size: 1024 * 1024 * 100, // 100MB
@@ -231,7 +231,7 @@ impl Default for Config {
                 max_deviation: 0.1,
             },
             geo: GeoConfig {
-                enabled: true,
+                enabled: false,  // Disabled by default - enable when GeoIP database is available
                 geoip_database_path: "./GeoLite2-City.mmdb".to_string(),
                 prefer_local_endpoints: true,
                 max_latency_penalty_ms: 200,
@@ -322,7 +322,8 @@ impl Config {
     
     fn validate(&self) -> Result<(), AppError> {
         if self.endpoints.is_empty() {
-            return Err(AppError::ConfigError("No endpoints configured".to_string()));
+            eprintln!("WARNING: No endpoints configured. The server will start but won't be able to proxy requests.");
+            eprintln!("Set RPC_ENDPOINTS environment variable with comma-separated RPC URLs.");
         }
 
         if self.auth.enabled && self.auth.jwt_secret.len() < 32 {

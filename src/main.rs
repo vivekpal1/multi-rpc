@@ -209,8 +209,17 @@ async fn handle_websocket_upgrade(
 async fn handle_health(
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<serde_json::Value>, AppError> {
-    let health = state.health_service.get_system_health().await;
-    Ok(Json(health))
+    // Simple health check that doesn't depend on endpoints
+    let uptime = state.metrics_service.get_uptime();
+    let endpoints_count = state.endpoint_manager.get_endpoint_info().await.len();
+    
+    Ok(Json(json!({
+        "status": "healthy",
+        "uptime_seconds": uptime.as_secs(),
+        "endpoints_configured": endpoints_count,
+        "version": env!("CARGO_PKG_VERSION"),
+        "timestamp": Utc::now().to_rfc3339()
+    })))
 }
 
 async fn handle_endpoints(
