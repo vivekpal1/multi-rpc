@@ -297,7 +297,10 @@ impl Config {
         // Try environment variables
         let mut config = Config::default();
         
-        if let Ok(bind_addr) = std::env::var("BIND_ADDRESS") {
+        // Support Cloud Run's PORT environment variable
+        if let Ok(port) = std::env::var("PORT") {
+            config.bind_address = format!("0.0.0.0:{}", port);
+        } else if let Ok(bind_addr) = std::env::var("BIND_ADDRESS") {
             config.bind_address = bind_addr;
         }
         
