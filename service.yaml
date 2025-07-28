@@ -1,0 +1,147 @@
+# Cloud Run Service Configuration
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: multi-rpc-backend
+  annotations:
+    run.googleapis.com/ingress: all
+    run.googleapis.com/cpu-throttling: "false"
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/execution-environment: gen2
+        run.googleapis.com/cpu-throttling: "false"
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "100"
+    spec:
+      containerConcurrency: 1000
+      timeoutSeconds: 300
+      serviceAccountName: multi-rpc-sa@PROJECT_ID.iam.gserviceaccount.com
+      containers:
+      - image: gcr.io/PROJECT_ID/multi-rpc-backend:latest
+        ports:
+        - containerPort: 8080
+        resources:
+          limits:
+            cpu: "2"
+            memory: "2Gi"
+          requests:
+            cpu: "1"
+            memory: "512Mi"
+        env:
+        - name: RUST_LOG
+          value: "info"
+        - name: PORT
+          value: "8080"
+        - name: RPC_ENDPOINTS
+          valueFrom:
+            secretKeyRef:
+              name: rpc-endpoints
+              key: latest
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: database-url
+              key: latest
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: redis-url
+              key: latest
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+---
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: multi-rpc-frontend
+  annotations:
+    run.googleapis.com/ingress: all
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/execution-environment: gen2
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "50"
+    spec:
+      containerConcurrency: 100
+      timeoutSeconds: 60
+      serviceAccountName: multi-rpc-sa@PROJECT_ID.iam.gserviceaccount.com
+      containers:
+      - image: gcr.io/PROJECT_ID/multi-rpc-frontend:latest
+        ports:
+        - containerPort: 3000
+        resources:
+          limits:
+            cpu: "1"
+            memory: "1Gi"
+          requests:
+            cpu: "0.5"
+            memory: "256Mi"
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "3000"
+        - name: NEXT_PUBLIC_RPC_BACKEND_URL
+          value: "https://multi-rpc-backend-PROJECT_NUMBER-uc.a.run.app"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: database-url
+              key: latest
+        - name: NEXTAUTH_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: nextauth-secret
+              key: latest
+        - name: NEXTAUTH_URL
+          value: "https://multi-rpc-frontend-PROJECT_NUMBER-uc.a.run.app"
+        - name: PRIVY_APP_ID
+          valueFrom:
+            secretKeyRef:
+              name: privy-app-id
+              key: latest
+        - name: PRIVY_APP_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: privy-app-secret
+              key: latest
+        - name: STRIPE_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: stripe-secret-key
+              key: latest
+        - name: STRIPE_WEBHOOK_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: stripe-webhook-secret
+              key: latest
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          timeoutSeconds: 5

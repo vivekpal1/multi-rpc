@@ -1,0 +1,122 @@
+# Google Cloud Build configuration for Multi-RPC project
+# This builds both the Rust backend and Next.js frontend
+
+steps:
+  # Build Rust backend
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-backend'
+    args: [
+      'build',
+      '-t', 'gcr.io/$PROJECT_ID/multi-rpc-backend:$SHORT_SHA',
+      '-t', 'gcr.io/$PROJECT_ID/multi-rpc-backend:latest',
+      '-f', 'Dockerfile',
+      '.'
+    ]
+
+  # Build Next.js frontend
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-frontend'
+    args: [
+      'build',
+      '-t', 'gcr.io/$PROJECT_ID/multi-rpc-frontend:$SHORT_SHA',
+      '-t', 'gcr.io/$PROJECT_ID/multi-rpc-frontend:latest',
+      '-f', 'web-ui/Dockerfile',
+      './web-ui'
+    ]
+    waitFor: ['-']  # Run in parallel with backend build
+
+  # Push backend image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-backend'
+    args: ['push', '--all-tags', 'gcr.io/$PROJECT_ID/multi-rpc-backend']
+    waitFor: ['build-backend']
+
+  # Push frontend image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-frontend'
+    args: ['push', '--all-tags', 'gcr.io/$PROJECT_ID/multi-rpc-frontend']
+    waitFor: ['build-frontend']
+
+  # Deploy backend to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-backend'
+    entrypoint: 'gcloud'
+    args: [
+      'run', 'deploy', 'multi-rpc-backend',
+      '--image', 'gcr.io/$PROJECT_ID/multi-rpc-backend:$SHORT_SHA',
+      '--region', '${_REGION}',
+      '--platform', 'managed',
+      '--allow-unauthenticated',
+      '--port', '8080',
+      '--memory', '2Gi',
+      '--cpu', '2',
+      '--max-instances', '100',
+      '--min-instances', '1',
+      '--service-account', 'multi-rpc-sa@$PROJECT_ID.iam.gserviceaccount.com',
+      '--set-env-vars', 'RUST_LOG=info',
+      '--set-env-vars', 'RPC_ENDPOINTS=${_RPC_ENDPOINTS}',
+      '--set-env-vars', 'REDIS_URL=${_REDIS_URL}',
+      '--set-env-vars', 'DATABASE_URL=${_DATABASE_URL}'
+    ]
+    waitFor: ['push-backend']
+
+  # Deploy frontend to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-frontend'
+    entrypoint: 'gcloud'
+    args: [
+      'run', 'deploy', 'multi-rpc-frontend',
+      '--image', 'gcr.io/$PROJECT_ID/multi-rpc-frontend:$SHORT_SHA',
+      '--region', '${_REGION}',
+      '--platform', 'managed',
+      '--allow-unauthenticated',
+      '--port', '3000',
+      '--memory', '1Gi',
+      '--cpu', '1',
+      '--max-instances', '50',
+      '--min-instances', '1',
+      '--service-account', 'multi-rpc-sa@$PROJECT_ID.iam.gserviceaccount.com',
+      '--set-env-vars', 'NODE_ENV=production',
+      '--set-env-vars', 'NEXT_PUBLIC_RPC_BACKEND_URL=https://multi-rpc-backend-${_PROJECT_NUMBER}-uc.a.run.app',
+      '--set-env-vars', 'DATABASE_URL=${_DATABASE_URL}',
+      '--set-env-vars', 'NEXTAUTH_SECRET=${_NEXTAUTH_SECRET}',
+      '--set-env-vars', 'NEXTAUTH_URL=https://multi-rpc-frontend-${_PROJECT_NUMBER}-uc.a.run.app',
+      '--set-env-vars', 'PRIVY_APP_ID=${_PRIVY_APP_ID}',
+      '--set-env-vars', 'PRIVY_APP_SECRET=${_PRIVY_APP_SECRET}',
+      '--set-env-vars', 'STRIPE_SECRET_KEY=${_STRIPE_SECRET_KEY}',
+      '--set-env-vars', 'STRIPE_WEBHOOK_SECRET=${_STRIPE_WEBHOOK_SECRET}'
+    ]
+    waitFor: ['push-frontend']
+
+  # Setup Cloud Load Balancer (optional)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'setup-loadbalancer'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "Deployment completed successfully!"
+        echo "Backend URL: https://multi-rpc-backend-${_PROJECT_NUMBER}-uc.a.run.app"
+        echo "Frontend URL: https://multi-rpc-frontend-${_PROJECT_NUMBER}-uc.a.run.app"
+
+# Substitution variables
+substitutions:
+  _REGION: 'us-central1'
+  _RPC_ENDPOINTS: 'https://api.mainnet-beta.solana.com'
+  _REDIS_URL: 'redis://localhost:6379'
+  _DATABASE_URL: 'postgresql://user:password@localhost/multirpc'
+  _NEXTAUTH_SECRET: 'your-nextauth-secret'
+  _PRIVY_APP_ID: 'your-privy-app-id'
+  _PRIVY_APP_SECRET: 'your-privy-app-secret'
+  _STRIPE_SECRET_KEY: 'your-stripe-secret-key'
+  _STRIPE_WEBHOOK_SECRET: 'your-stripe-webhook-secret'
+  _PROJECT_NUMBER: '${PROJECT_NUMBER}'
+
+# Build configuration
+options:
+  machineType: 'E2_HIGHCPU_8'
+  logging: CLOUD_LOGGING_ONLY
+  dynamic_substitutions: true
+
+# Timeout for the entire build
+timeout: '1800s'
