@@ -63,12 +63,25 @@ pub struct AppState {
 async fn main() -> Result<(), AppError> {
     // Initialize tracing
     tracing_subscriber::fmt()
-        .with_max_level(Level::INFO)
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .with_file(true)
+        .with_line_number(true)
+        .with_thread_ids(true)
         .init();
 
+    info!("Starting Multi-RPC server...");
+
     // Load configuration
-    let config = Config::load().await?;
-    info!("Loaded configuration with {} endpoints", config.endpoints.len());
+    let config = match Config::load().await {
+        Ok(config) => {
+            info!("Loaded configuration with {} endpoints", config.endpoints.len());
+            config
+        }
+        Err(e) => {
+            error!("Failed to load configuration: {}", e);
+            return Err(e);
+        }
+    };
 
     // Initialize services
     let endpoint_manager = Arc::new(EndpointManager::new(config.endpoints.clone(), config.clone()).await?);
