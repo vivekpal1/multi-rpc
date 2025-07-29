@@ -28,15 +28,15 @@ RUN apt-get update && \
 # Copy the binary
 COPY --from=builder /app/target/release/multi-rpc /usr/local/bin/multi-rpc
 
-# Copy default config (optional - only if it exists)
-# This is commented out since config can be provided via environment variables
-# COPY config.toml /etc/multi-rpc/config.toml
+# Make binary executable
+RUN chmod +x /usr/local/bin/multi-rpc
 
-# Create non-root user
-RUN useradd -r -s /bin/false multirpc
+# Copy entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Switch to non-root user
-USER multirpc
+# Run as root for now to eliminate permission issues
+# In production, use a non-root user after confirming everything works
 
 # Expose port
 EXPOSE 8080
@@ -49,4 +49,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 ENV RUST_LOG=info
 
 # Run the application
-CMD ["multi-rpc"]
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD []
