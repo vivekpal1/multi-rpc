@@ -1,6 +1,5 @@
 "use client";
 
-import { usePrivy } from "@privy-io/react-auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -14,12 +13,37 @@ export interface User {
 
 export function useAuth() {
   const router = useRouter();
-  const { ready, authenticated, user: privyUser, logout, getAccessToken } = usePrivy();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Check if Privy is available
+  let privyHooks: any = {};
+  try {
+    // Only import and use Privy if it's configured
+    if (process.env.NEXT_PUBLIC_PRIVY_APP_ID) {
+      const { usePrivy } = require("@privy-io/react-auth");
+      privyHooks = usePrivy();
+    }
+  } catch (error) {
+    console.log("Privy not configured, running without authentication");
+  }
+
+  const { ready = true, authenticated = false, user: privyUser = null, logout = () => {}, getAccessToken = () => null } = privyHooks;
+
   useEffect(() => {
     async function fetchUser() {
+      // If Privy is not configured, create a mock user
+      if (!process.env.NEXT_PUBLIC_PRIVY_APP_ID) {
+        setUser({
+          id: "demo-user",
+          privyId: "demo-user",
+          email: "demo@example.com",
+          name: "Demo User",
+        });
+        setLoading(false);
+        return;
+      }
+
       if (!ready || !authenticated || !privyUser) {
         setUser(null);
         setLoading(false);
@@ -62,7 +86,9 @@ export function useAuth() {
   }, [ready, authenticated, privyUser, router, getAccessToken]);
 
   const signOut = async () => {
-    await logout();
+    if (logout) {
+      await logout();
+    }
     setUser(null);
     router.push("/");
   };
@@ -70,7 +96,7 @@ export function useAuth() {
   return {
     user,
     loading: loading || !ready,
-    isAuthenticated: authenticated,
+    isAuthenticated: authenticated || !process.env.NEXT_PUBLIC_PRIVY_APP_ID,
     signOut,
   };
 }

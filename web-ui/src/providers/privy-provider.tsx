@@ -9,10 +9,16 @@ export default function PrivyProviderWrapper({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
+
+  // If no Privy app ID is configured, just render children without provider
+  if (!appId || appId === "undefined" || appId === "") {
+    return <>{children}</>;
+  }
 
   return (
     <PrivyProvider
-      appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID!}
+      appId={appId}
       config={{
         loginMethods: ["wallet", "google", "twitter"],
         appearance: {

@@ -3,10 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { PrivyClient } from "@privy-io/server-auth";
 
-const privy = new PrivyClient(
-  process.env.NEXT_PUBLIC_PRIVY_APP_ID!,
-  process.env.PRIVY_APP_SECRET!
-);
+export const dynamic = 'force-dynamic';
+
+const privy = process.env.NEXT_PUBLIC_PRIVY_APP_ID && process.env.PRIVY_APP_SECRET
+  ? new PrivyClient(
+      process.env.NEXT_PUBLIC_PRIVY_APP_ID,
+      process.env.PRIVY_APP_SECRET
+    )
+  : null;
 
 export async function GET() {
   try {
@@ -18,10 +22,12 @@ export async function GET() {
     // Extract token from Bearer token
     const token = authorization.replace("Bearer ", "");
     
-    // Verify the token with Privy
-    const claims = await privy.verifyAuthToken(token);
-    if (!claims) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    // Verify the token with Privy if configured
+    if (privy) {
+      const claims = await privy.verifyAuthToken(token);
+      if (!claims) {
+        return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+      }
     }
 
     // Get plan limits
