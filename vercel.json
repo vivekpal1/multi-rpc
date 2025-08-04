@@ -1,6 +1,0 @@
-{
-  "buildCommand": "cd web-ui && npm install && npm run build",
-  "outputDirectory": "web-ui/.next",
-  "installCommand": "cd web-ui && npm install",
-  "framework": null
-}
