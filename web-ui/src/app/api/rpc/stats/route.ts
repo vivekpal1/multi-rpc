@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrivyClient } from "@privy-io/server-auth";
 
-const privy = new PrivyClient(
-  process.env.NEXT_PUBLIC_PRIVY_APP_ID!,
-  process.env.PRIVY_APP_SECRET!
-);
+export const dynamic = 'force-dynamic';
+
+const privy = process.env.NEXT_PUBLIC_PRIVY_APP_ID && process.env.PRIVY_APP_SECRET
+  ? new PrivyClient(
+      process.env.NEXT_PUBLIC_PRIVY_APP_ID,
+      process.env.PRIVY_APP_SECRET
+    )
+  : null;
 
 // Get RPC usage statistics
 export async function GET(request: NextRequest) {

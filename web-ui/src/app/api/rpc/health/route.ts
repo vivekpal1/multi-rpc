@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrivyClient } from "@privy-io/server-auth";
 
-const privy = new PrivyClient(
-  process.env.NEXT_PUBLIC_PRIVY_APP_ID!,
-  process.env.PRIVY_APP_SECRET!
-);
+export const dynamic = 'force-dynamic';
+
+const privy = process.env.NEXT_PUBLIC_PRIVY_APP_ID && process.env.PRIVY_APP_SECRET
+  ? new PrivyClient(
+      process.env.NEXT_PUBLIC_PRIVY_APP_ID,
+      process.env.PRIVY_APP_SECRET
+    )
+  : null;
 
 // Get health status of all RPC endpoints
 export async function GET(request: NextRequest) {
@@ -14,10 +18,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const token = authorization.replace("Bearer ", "");
-    const claims = await privy.verifyAuthToken(token);
-    if (!claims) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    // Skip auth check if Privy is not configured
+    if (privy) {
+      const token = authorization.replace("Bearer ", "");
+      const claims = await privy.verifyAuthToken(token);
+      if (!claims) {
+        return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+      }
     }
 
     // Fetch health status from Multi-RPC backend
