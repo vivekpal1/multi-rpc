@@ -23,11 +23,13 @@ export async function GET() {
     const token = authorization.replace("Bearer ", "");
     
     // Verify the token with Privy if configured
+    let userId = "demo-user";
     if (privy) {
       const claims = await privy.verifyAuthToken(token);
       if (!claims) {
         return NextResponse.json({ error: "Invalid token" }, { status: 401 });
       }
+      userId = claims.userId;
     }
 
     // Get plan limits
@@ -41,7 +43,7 @@ export async function GET() {
     try {
       // Fetch user data including API keys and usage
       const user = await prisma.user.findUnique({
-        where: { privyId: claims.userId },
+        where: { privyId: userId },
         include: {
           apiKeys: {
             orderBy: { createdAt: "desc" },
