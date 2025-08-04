@@ -49,10 +49,10 @@ export async function GET() {
       if (!user) {
         // Return mock user if database is not available
         return NextResponse.json({
-          id: claims.userId,
-          privyId: claims.userId,
-          email: (claims as any).email || "user@example.com",
-          walletAddress: (claims as any).walletAddress || null,
+          id: userId,
+          privyId: userId,
+          email: "user@example.com",
+          walletAddress: null,
           name: null,
           createdAt: new Date(),
         });
@@ -63,10 +63,10 @@ export async function GET() {
       console.error("Database error, using mock data:", dbError);
       // Return mock user if database connection fails
       return NextResponse.json({
-        id: claims.userId,
-        privyId: claims.userId,
-        email: (claims as any).email || "user@example.com",
-        walletAddress: (claims as any).walletAddress || null,
+        id: userId,
+        privyId: userId,
+        email: "user@example.com",
+        walletAddress: null,
         name: null,
         createdAt: new Date(),
       });
