@@ -18,10 +18,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const token = authorization.replace("Bearer ", "");
-    const claims = await privy.verifyAuthToken(token);
-    if (!claims) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    // Skip auth check if Privy is not configured
+    if (privy) {
+      const token = authorization.replace("Bearer ", "");
+      const claims = await privy.verifyAuthToken(token);
+      if (!claims) {
+        return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+      }
     }
 
     // Try to fetch from Multi-RPC backend
