@@ -1,4 +1,16 @@
 {
   "buildCommand": "cd web-ui && npm install && npm run build",
-  "outputDirectory": "web-ui/.next"
+  "outputDirectory": "web-ui/.next",
+  "framework": "nextjs",
+  "installCommand": "cd web-ui && npm install",
+  "env": {
+    "NEXT_PUBLIC_RPC_URL": "@rpc_url",
+    "DATABASE_URL": "@database_url",
+    "NEXTAUTH_SECRET": "@nextauth_secret",
+    "NEXT_PUBLIC_PRIVY_APP_ID": "@privy_app_id",
+    "PRIVY_APP_SECRET": "@privy_app_secret",
+    "STRIPE_SECRET_KEY": "@stripe_secret_key",
+    "STRIPE_WEBHOOK_SECRET": "@stripe_webhook_secret",
+    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY": "@stripe_publishable_key"
+  }
 }

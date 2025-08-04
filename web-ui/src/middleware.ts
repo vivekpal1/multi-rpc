@@ -2,10 +2,13 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { PrivyClient } from "@privy-io/server-auth";
 
-const privy = new PrivyClient(
-  process.env.NEXT_PUBLIC_PRIVY_APP_ID!,
-  process.env.PRIVY_APP_SECRET!
-);
+// Initialize Privy client only if credentials are available
+const privy = process.env.NEXT_PUBLIC_PRIVY_APP_ID && process.env.PRIVY_APP_SECRET
+  ? new PrivyClient(
+      process.env.NEXT_PUBLIC_PRIVY_APP_ID,
+      process.env.PRIVY_APP_SECRET
+    )
+  : null;
 
 // Routes that require authentication
 const protectedRoutes = [
@@ -49,6 +52,12 @@ export async function middleware(request: NextRequest) {
     request.cookies.get("privy-token")?.value;
 
   if (isProtectedRoute) {
+    // If Privy is not configured, skip authentication
+    if (!privy) {
+      console.warn("Authentication not configured - allowing access for development");
+      return response;
+    }
+    
     if (!token) {
       // API routes return 401, web routes redirect to auth
       if (pathname.startsWith("/api")) {
@@ -96,7 +105,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Redirect authenticated users away from auth pages
-  if (isAuthRoute && token) {
+  if (isAuthRoute && token && privy) {
     try {
       const claims = await privy.verifyAuthToken(token);
       if (claims) {

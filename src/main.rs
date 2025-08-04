@@ -137,7 +137,7 @@ async fn main() -> Result<(), AppError> {
     // Build the application router
     let app = Router::new()
         // Main RPC endpoint
-        .route("/", post(handle_rpc_request))
+        .route("/", get(handle_root).post(handle_rpc_request))
         
         // WebSocket endpoint
         .route("/ws", get(handle_websocket_upgrade))
