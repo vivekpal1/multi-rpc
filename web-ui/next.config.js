@@ -1,6 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  compiler: {
+    styledComponents: {
+      displayName: false,
+      ssr: true,
+      fileName: false,
+      cssProp: true,
+    },
+  },
   async rewrites() {
     // Only rewrite if we have a backend URL configured
     const backendUrl = process.env.NEXT_PUBLIC_RPC_URL || process.env.RPC_URL;
