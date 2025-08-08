@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -60,7 +60,7 @@ export default function RealDashboard() {
   const [autoRefresh, setAutoRefresh] = useState(false);
 
   // Fetch dashboard data
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       const token = await getAccessToken();
       if (!token) return;
@@ -99,13 +99,13 @@ export default function RealDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getAccessToken]);
 
   useEffect(() => {
     if (privyUser) {
       fetchDashboardData();
     }
-  }, [privyUser]);
+  }, [privyUser, fetchDashboardData]);
 
   // Auto-refresh
   useEffect(() => {
@@ -116,7 +116,7 @@ export default function RealDashboard() {
     }, 30000); // Refresh every 30 seconds
 
     return () => clearInterval(interval);
-  }, [autoRefresh]);
+  }, [autoRefresh, fetchDashboardData]);
 
   // Calculate real metrics
   const metrics = useMemo(() => {

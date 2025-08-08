@@ -116,6 +116,7 @@ impl HealthService {
                             }
                         }
                     }
+                    
                     false => {
                         let status_code = response.status();
                         warn!("Health check HTTP error for {}: {}", url, status_code);

@@ -52,7 +52,7 @@ export function setupOfflineDetection() {
       if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
         navigator.serviceWorker.ready.then((registration) => {
           if ('sync' in registration) {
-            registration.sync.register('sync-api-requests');
+            (registration as any).sync.register('sync-api-requests');
           }
         });
       }

@@ -97,6 +97,8 @@ export function usePrefetchOnHover(href: string, enabled = true) {
 
 // Hook to prefetch visible links
 export function usePrefetchVisible() {
+  const router = useRouter();
+  
   useEffect(() => {
     if (typeof IntersectionObserver === 'undefined') return;
 
@@ -126,5 +128,5 @@ export function usePrefetchVisible() {
     links.forEach(link => observer.observe(link));
 
     return () => observer.disconnect();
-  }, []);
+  }, [router]);
 }

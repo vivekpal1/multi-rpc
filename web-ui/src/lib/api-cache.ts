@@ -38,7 +38,8 @@ class APICache {
 
   clearExpired(): void {
     const now = Date.now();
-    for (const [key, entry] of this.cache.entries()) {
+    const entries = Array.from(this.cache.entries());
+    for (const [key, entry] of entries) {
       if (now - entry.timestamp > entry.ttl) {
         this.cache.delete(key);
       }

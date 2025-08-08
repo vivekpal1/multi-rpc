@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -62,7 +62,7 @@ export default function ProfilePage() {
     image: "",
   });
 
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = useCallback(async () => {
     try {
       setLoading(true);
       const token = await getAccessToken();
@@ -86,13 +86,13 @@ export default function ProfilePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getAccessToken]);
 
   useEffect(() => {
     if (privyUser) {
       fetchUserProfile();
     }
-  }, [privyUser]);
+  }, [privyUser, fetchUserProfile]);
 
   const handleSave = async () => {
     try {

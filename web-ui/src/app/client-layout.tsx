@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { registerServiceWorker, setupOfflineDetection } from "@/lib/register-sw";
-import { reportWebVitals } from "@/hooks/use-performance";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -11,13 +10,15 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     setupOfflineDetection();
 
     // Monitor web vitals
-    if (typeof window !== 'undefined' && 'web-vital' in window) {
-      import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
-        getCLS(reportWebVitals);
-        getFID(reportWebVitals);
-        getFCP(reportWebVitals);
-        getLCP(reportWebVitals);
-        getTTFB(reportWebVitals);
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
+      import('web-vitals').then(({ onCLS, onINP, onFCP, onLCP, onTTFB }) => {
+        onCLS?.(console.log);
+        onINP?.(console.log);
+        onFCP?.(console.log);
+        onLCP?.(console.log);
+        onTTFB?.(console.log);
+      }).catch(() => {
+        // Web vitals not available
       });
     }
   }, []);

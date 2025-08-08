@@ -44,14 +44,16 @@ class RequestBatcher {
     const batch = new Map<string, BatchRequest[]>();
     
     // Move items from queue to batch
-    for (const [key, requests] of this.queue.entries()) {
+    const queueEntries = Array.from(this.queue.entries());
+    for (const [key, requests] of queueEntries) {
       if (batch.size >= this.maxBatchSize) break;
       batch.set(key, requests);
       this.queue.delete(key);
     }
 
     // Process each unique request
-    for (const [key, requests] of batch.entries()) {
+    const batchEntries = Array.from(batch.entries());
+    for (const [key, requests] of batchEntries) {
       const { endpoint, params } = requests[0];
       
       try {

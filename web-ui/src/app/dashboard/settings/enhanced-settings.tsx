@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -108,7 +108,7 @@ export default function EnhancedSettingsPage() {
   const [showWebhookSecret, setShowWebhookSecret] = useState(false);
   const [webhookSecret, setWebhookSecret] = useState("whsec_" + Math.random().toString(36).substring(2, 15));
 
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     try {
       setLoading(true);
       const token = await getAccessToken();
@@ -129,13 +129,13 @@ export default function EnhancedSettingsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getAccessToken]);
 
   useEffect(() => {
     if (privyUser) {
       fetchSettings();
     }
-  }, [privyUser]);
+  }, [privyUser, fetchSettings]);
 
   useEffect(() => {
     if (settings.preferences.theme !== "system") {
