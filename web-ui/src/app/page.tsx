@@ -400,7 +400,7 @@ const connection = new Connection(
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <p className="text-gray-700 mb-4 italic">
-                  "{testimonial.quote}"
+                  &quot;{testimonial.quote}&quot;
                 </p>
                 <div>
                   <p className="font-semibold text-gray-900">{testimonial.author}</p>

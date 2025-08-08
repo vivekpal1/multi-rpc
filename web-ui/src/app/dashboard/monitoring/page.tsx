@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useRPCWebSocket } from "@/providers/websocket-provider";
 import {
@@ -16,7 +16,7 @@ import {
   TrendingDown,
   Server,
 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { ClientDate } from "@/components/client-date";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -51,31 +51,7 @@ export default function MonitoringPage() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [notifications, setNotifications] = useState(true);
 
-  useEffect(() => {
-    fetchMonitoringData();
-    
-    if (autoRefresh) {
-      const interval = setInterval(fetchMonitoringData, 10000); // Refresh every 10 seconds
-      return () => clearInterval(interval);
-    }
-  }, [autoRefresh]);
-
-  // Use WebSocket data if available
-  useEffect(() => {
-    if (wsConnected && wsHealth) {
-      const checks: HealthCheck[] = wsHealth.map((ep: any) => ({
-        endpoint: ep.url,
-        status: ep.healthy ? "healthy" : ep.latency > 500 ? "degraded" : "down",
-        latency: ep.latency || 0,
-        lastCheck: new Date(),
-        uptime: ep.success_rate || 0,
-        errors: ep.error_count || 0,
-      }));
-      setHealthChecks(checks);
-    }
-  }, [wsConnected, wsHealth]);
-
-  const fetchMonitoringData = async () => {
+  const fetchMonitoringData = useCallback(async () => {
     try {
       const token = await getAccessToken();
       const [healthRes, alertsRes] = await Promise.all([
@@ -109,7 +85,31 @@ export default function MonitoringPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [getAccessToken]);
+
+  useEffect(() => {
+    fetchMonitoringData();
+    
+    if (autoRefresh) {
+      const interval = setInterval(fetchMonitoringData, 10000); // Refresh every 10 seconds
+      return () => clearInterval(interval);
+    }
+  }, [autoRefresh, fetchMonitoringData]);
+
+  // Use WebSocket data if available
+  useEffect(() => {
+    if (wsConnected && wsHealth) {
+      const checks: HealthCheck[] = wsHealth.map((ep: any) => ({
+        endpoint: ep.url,
+        status: ep.healthy ? "healthy" : ep.latency > 500 ? "degraded" : "down",
+        latency: ep.latency || 0,
+        lastCheck: new Date(),
+        uptime: ep.success_rate || 0,
+        errors: ep.error_count || 0,
+      }));
+      setHealthChecks(checks);
+    }
+  }, [wsConnected, wsHealth]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -241,7 +241,7 @@ export default function MonitoringPage() {
                   )}
                 </div>
                 <span className="text-sm text-gray-500">
-                  {formatDistanceToNow(new Date(alert.timestamp), { addSuffix: true })}
+                  <ClientDate date={alert.timestamp} />
                 </span>
               </AlertDescription>
             </Alert>
@@ -280,7 +280,7 @@ export default function MonitoringPage() {
                 <div>
                   <p className="font-medium">{new URL(check.endpoint).hostname}</p>
                   <p className="text-sm text-gray-500">
-                    Last checked: {formatDistanceToNow(check.lastCheck, { addSuffix: true })}
+                    Last checked: <ClientDate date={check.lastCheck} />
                   </p>
                 </div>
               </div>

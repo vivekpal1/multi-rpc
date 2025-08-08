@@ -14,7 +14,8 @@ const privy = process.env.NEXT_PUBLIC_PRIVY_APP_ID && process.env.PRIVY_APP_SECR
 
 export async function GET() {
   try {
-    const authorization = headers().get("authorization");
+    const headersList = await headers();
+    const authorization = headersList.get("authorization");
     if (!authorization) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

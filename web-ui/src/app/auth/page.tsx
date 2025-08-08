@@ -244,7 +244,7 @@ export default function AuthPage() {
             {/* Testimonial */}
             <div className="border-l-2 border-gray-700 pl-6">
               <p className="text-gray-300 italic mb-4">
-                "Multi-RPC saved us from countless outages. It's the backbone of our DeFi protocol."
+                &quot;Multi-RPC saved us from countless outages. It&apos;s the backbone of our DeFi protocol.&quot;
               </p>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gray-700 rounded-full" />

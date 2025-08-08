@@ -11,24 +11,41 @@ export interface User {
   name?: string;
 }
 
+// Create a no-op hook for when Privy is not available
+const usePrivyFallback = () => ({
+  ready: true,
+  authenticated: false,
+  user: null,
+  logout: () => Promise.resolve(),
+  getAccessToken: () => Promise.resolve(null),
+});
+
+// Conditionally import Privy at module level
+let usePrivyHook: any = usePrivyFallback;
+if (process.env.NEXT_PUBLIC_PRIVY_APP_ID) {
+  try {
+    const privyAuth = require("@privy-io/react-auth");
+    if (privyAuth?.usePrivy) {
+      usePrivyHook = privyAuth.usePrivy;
+    }
+  } catch (error) {
+    console.log("Privy not configured, running without authentication");
+  }
+}
+
 export function useAuth() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Check if Privy is available
-  let privyHooks: any = {};
-  try {
-    // Only import and use Privy if it's configured
-    if (process.env.NEXT_PUBLIC_PRIVY_APP_ID) {
-      const { usePrivy } = require("@privy-io/react-auth");
-      privyHooks = usePrivy();
-    }
-  } catch (error) {
-    console.log("Privy not configured, running without authentication");
-  }
-
-  const { ready = true, authenticated = false, user: privyUser = null, logout = () => {}, getAccessToken = () => null } = privyHooks;
+  // Always call the same hook
+  const { 
+    ready = true, 
+    authenticated = false, 
+    user: privyUser = null, 
+    logout = () => {}, 
+    getAccessToken = () => null 
+  } = usePrivyHook();
 
   useEffect(() => {
     async function fetchUser() {

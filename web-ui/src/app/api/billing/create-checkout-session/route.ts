@@ -15,7 +15,8 @@ const PRICE_IDS = {
 
 export async function POST(req: Request) {
   try {
-    const userId = headers().get("x-user-id");
+    const headersList = await headers();
+    const userId = headersList.get("x-user-id");
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

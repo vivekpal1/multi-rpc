@@ -54,11 +54,17 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 
   // Build WebSocket URL with authentication
   useEffect(() => {
+    // Skip WebSocket for now if backend isn't configured
+    const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL;
+    if (!rpcUrl || rpcUrl === 'http://localhost:8080') {
+      console.log('Multi-RPC backend not configured, skipping WebSocket connection');
+      return;
+    }
+
     if (authenticated) {
       getAccessToken().then(token => {
         if (token) {
-          const baseUrl = process.env.NEXT_PUBLIC_RPC_URL || 'http://localhost:8080';
-          const wsUrl = baseUrl.replace(/^http/, 'ws');
+          const wsUrl = rpcUrl.replace(/^http/, 'ws');
           setWebsocketUrl(`${wsUrl}/ws?token=${token}`);
         }
       });

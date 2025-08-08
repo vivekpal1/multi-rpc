@@ -32,6 +32,12 @@ export function useWebSocket({
 
   const connect = useCallback(() => {
     try {
+      // Skip if no URL provided
+      if (!url) {
+        console.log('WebSocket URL not provided, skipping connection');
+        return;
+      }
+
       // Clean up existing connection
       if (ws.current?.readyState === WebSocket.OPEN) {
         ws.current.close();
@@ -64,8 +70,8 @@ export function useWebSocket({
       };
 
       ws.current.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        setLastError('Connection error');
+        console.warn('WebSocket connection failed (backend may not be running)');
+        setLastError('Backend not available');
         onError?.(error);
       };
 

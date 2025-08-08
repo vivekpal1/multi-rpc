@@ -1,6 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Optimize for faster development builds with Turbopack
+  turbopack: {
+    resolveAlias: {
+      '@': './src',
+    },
+  },
   compiler: {
     styledComponents: {
       displayName: false,
@@ -8,6 +14,25 @@ const nextConfig = {
       fileName: false,
       cssProp: true,
     },
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+  // Performance optimizations
+  experimental: {
+    optimizeCss: true,
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons', 'recharts'],
+  },
+  // Module optimization
+  modularizeImports: {
+    'lucide-react': {
+      transform: 'lucide-react/dist/esm/icons/{{member}}',
+    },
+  },
+  // Disable type checking during development build for speed
+  typescript: {
+    ignoreBuildErrors: process.env.NODE_ENV === 'development',
+  },
+  eslint: {
+    ignoreDuringBuilds: process.env.NODE_ENV === 'development',
   },
   async rewrites() {
     // Only rewrite if we have a backend URL configured

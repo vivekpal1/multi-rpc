@@ -96,22 +96,7 @@ export default function DashboardClient({
   const [isAddingEndpoint, setIsAddingEndpoint] = useState(false);
   const [endpointError, setEndpointError] = useState("");
 
-  // Fetch RPC health data
-  useEffect(() => {
-    fetchRpcHealth();
-    fetchRpcStats();
-    fetchCustomEndpoints();
-    
-    // Refresh every 30 seconds
-    const interval = setInterval(() => {
-      fetchRpcHealth();
-      fetchRpcStats();
-    }, 30000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchRpcHealth = async () => {
+  const fetchRpcHealth = useCallback(async () => {
     try {
       const token = await getAccessToken();
       const response = await fetch("/api/rpc/health", {
@@ -129,9 +114,9 @@ export default function DashboardClient({
     } finally {
       setIsLoadingHealth(false);
     }
-  };
+  }, [getAccessToken]);
 
-  const fetchRpcStats = async () => {
+  const fetchRpcStats = useCallback(async () => {
     try {
       const token = await getAccessToken();
       const response = await fetch("/api/rpc/stats", {
@@ -147,9 +132,9 @@ export default function DashboardClient({
     } catch (error) {
       console.error("Error fetching RPC stats:", error);
     }
-  };
+  }, [getAccessToken]);
 
-  const fetchCustomEndpoints = async () => {
+  const fetchCustomEndpoints = useCallback(async () => {
     try {
       const token = await getAccessToken();
       const response = await fetch("/api/rpc/endpoints", {
@@ -165,7 +150,22 @@ export default function DashboardClient({
     } catch (error) {
       console.error("Error fetching custom endpoints:", error);
     }
-  };
+  }, [getAccessToken]);
+
+  // Fetch RPC health data
+  useEffect(() => {
+    fetchRpcHealth();
+    fetchRpcStats();
+    fetchCustomEndpoints();
+    
+    // Refresh every 30 seconds
+    const interval = setInterval(() => {
+      fetchRpcHealth();
+      fetchRpcStats();
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, [fetchRpcHealth, fetchRpcStats, fetchCustomEndpoints]);
 
   const addCustomEndpoint = async () => {
     if (!newEndpoint.url || !newEndpoint.name) {

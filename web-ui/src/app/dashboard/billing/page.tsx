@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -48,11 +48,7 @@ export default function BillingPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchBillingData();
-  }, []);
-
-  const fetchBillingData = async () => {
+  const fetchBillingData = useCallback(async () => {
     try {
       const token = await getAccessToken();
       const [subRes, usageRes, invoicesRes] = await Promise.all([
@@ -86,7 +82,11 @@ export default function BillingPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [getAccessToken]);
+
+  useEffect(() => {
+    fetchBillingData();
+  }, [fetchBillingData]);
 
   const handleUpgrade = (plan: string) => {
     console.log("Upgrade to plan:", plan);
@@ -174,27 +174,35 @@ export default function BillingPage() {
   const usagePercentage = usage ? (usage.requests / currentPlan.limits.requests) * 100 : 0;
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Billing & Usage</h1>
-          <p className="text-gray-600 mt-1">Manage your subscription and monitor usage</p>
-        </div>
-      </div>
-
-      {/* Current Plan */}
-      <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-lg font-semibold">Current Plan</h2>
-            <div className="flex items-center gap-2 mt-1">
-              <Shield className="h-5 w-5 text-blue-600" />
-              <span className="text-2xl font-bold">{currentPlan.name}</span>
-              {subscription?.status === "active" && (
-                <Badge className="bg-green-100 text-green-800">Active</Badge>
-              )}
+    <div className="min-h-screen p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="rounded-2xl glass border-0 p-8 animate-fade-in">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold text-gradient-animate flex items-center gap-3">
+                <CreditCard className="w-10 h-10 text-purple-400 animate-pulse-glow" />
+                Billing & Usage
+              </h1>
+              <p className="text-muted-foreground mt-2">Manage your subscription and monitor usage</p>
             </div>
           </div>
+        </div>
+
+        {/* Current Plan */}
+        <div className="rounded-2xl glass border-0 p-8 animate-slide-up">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-semibold text-foreground mb-2">Current Plan</h2>
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-xl glass-subtle">
+                  <Shield className="h-6 w-6 text-purple-400" />
+                </div>
+                <span className="text-3xl font-bold text-foreground">{currentPlan.name}</span>
+                {subscription?.status === "active" && (
+                  <Badge className="bg-green-500/10 text-green-400 border border-green-500/20">Active</Badge>
+                )}
+              </div>
+            </div>
           {currentPlan.price > 0 && (
             <div className="text-right">
               <p className="text-2xl font-bold">${currentPlan.price}/mo</p>
@@ -207,14 +215,16 @@ export default function BillingPage() {
           )}
         </div>
 
-        {currentPlan.name === "Free" && (
-          <Alert className="mb-4">
-            <Zap className="h-4 w-4" />
-            <AlertDescription>
-              Upgrade to a paid plan for higher limits and premium features.
-            </AlertDescription>
-          </Alert>
-        )}
+          {currentPlan.name === "Free" && (
+            <div className="mb-6 p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
+              <div className="flex items-center gap-3">
+                <Zap className="h-5 w-5 text-purple-400" />
+                <p className="text-sm text-purple-300">
+                  Upgrade to a paid plan for higher limits and premium features.
+                </p>
+              </div>
+            </div>
+          )}
 
         <div className="space-y-2 mb-4">
           {currentPlan.features.map((feature, index) => (
@@ -225,19 +235,19 @@ export default function BillingPage() {
           ))}
         </div>
 
-        {currentPlan.name !== "Enterprise" && (
-          <Button 
-            onClick={() => handleUpgrade(plans[plans.indexOf(currentPlan) + 1].name)}
-            className="w-full"
-          >
-            Upgrade Plan
-          </Button>
-        )}
-      </Card>
+          {currentPlan.name !== "Enterprise" && (
+            <button 
+              onClick={() => handleUpgrade(plans[plans.indexOf(currentPlan) + 1].name)}
+              className="btn-primary w-full mt-6"
+            >
+              Upgrade Plan
+            </button>
+          )}
+        </div>
 
-      {/* Usage Overview */}
-      <Card className="p-6">
-        <h2 className="text-lg font-semibold mb-4">Current Usage</h2>
+        {/* Usage Overview */}
+        <div className="rounded-2xl glass border-0 p-8 animate-fade-in">
+          <h2 className="text-2xl font-semibold text-foreground mb-6">Current Usage</h2>
         
         <div className="space-y-4">
           <div>
@@ -252,7 +262,7 @@ export default function BillingPage() {
             {usagePercentage > 80 && (
               <p className="text-xs text-yellow-600 mt-1 flex items-center">
                 <AlertCircle className="h-3 w-3 mr-1" />
-                You're approaching your monthly limit
+                You&apos;re approaching your monthly limit
               </p>
             )}
           </div>
@@ -275,94 +285,107 @@ export default function BillingPage() {
             </div>
           </div>
         </div>
-      </Card>
-
-      {/* Pricing Plans */}
-      <div>
-        <h2 className="text-lg font-semibold mb-4">Available Plans</h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {plans.map((plan) => (
-            <Card 
-              key={plan.name}
-              className={`p-6 ${plan.name === currentPlan.name ? 'border-blue-600 border-2' : ''}`}
-            >
-              {plan.name === currentPlan.name && (
-                <Badge className="mb-2">Current Plan</Badge>
-              )}
-              <h3 className="text-lg font-semibold">{plan.name}</h3>
-              <p className="text-3xl font-bold my-2">
-                ${plan.price}
-                <span className="text-sm font-normal text-gray-500">/mo</span>
-              </p>
-              <ul className="space-y-2 mb-4 text-sm">
-                {plan.features.map((feature, index) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-              <Button 
-                variant={plan.name === currentPlan.name ? "outline" : "default"}
-                className="w-full"
-                onClick={() => handleUpgrade(plan.name)}
-                disabled={plan.name === currentPlan.name}
-              >
-                {plan.name === currentPlan.name ? "Current Plan" : "Upgrade"}
-              </Button>
-            </Card>
-          ))}
-        </div>
       </div>
 
-      {/* Billing History */}
-      {invoices.length > 0 && (
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold mb-4">Billing History</h2>
-          <div className="space-y-3">
-            {invoices.map((invoice) => (
-              <div key={invoice.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div>
-                  <p className="font-medium">
-                    Invoice #{invoice.id.slice(-8)}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    {new Date(invoice.date).toLocaleDateString()}
-                  </p>
+        {/* Pricing Plans */}
+        <div>
+          <h2 className="text-2xl font-semibold mb-6 text-foreground">Available Plans</h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {plans.map((plan, index) => (
+              <div
+                key={plan.name}
+                className={`group relative overflow-hidden rounded-2xl p-8 transition-all duration-300 hover:scale-[1.02] animate-scale-in stagger-${index + 1} ${
+                  plan.name === currentPlan.name 
+                    ? 'glass border-2 border-purple-500' 
+                    : 'glass-subtle border-0 hover:border hover:border-white/10'
+                }`}
+              >
+                {plan.name === currentPlan.name && (
+                  <Badge className="absolute top-4 right-4 bg-purple-500/20 text-purple-400 border-purple-500/30">Current</Badge>
+                )}
+                <h3 className="text-xl font-bold text-foreground mb-4">{plan.name}</h3>
+                <div className="mb-6">
+                  <span className="text-4xl font-bold text-gradient">${plan.price}</span>
+                  <span className="text-sm text-muted-foreground">/month</span>
                 </div>
-                <div className="flex items-center gap-4">
-                  <Badge variant={invoice.status === "paid" ? "default" : "secondary"}>
-                    {invoice.status}
-                  </Badge>
-                  <span className="font-medium">${invoice.amount}</span>
-                  <Button variant="ghost" size="sm">
-                    <Download className="h-4 w-4" />
-                  </Button>
-                </div>
+                <ul className="space-y-3 mb-8 text-sm">
+                  {plan.features.map((feature, idx) => (
+                    <li key={idx} className="flex items-start gap-3">
+                      <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-muted-foreground">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  className={`w-full interactive ${
+                    plan.name === currentPlan.name 
+                      ? 'btn-secondary opacity-50 cursor-not-allowed' 
+                      : 'btn-primary'
+                  }`}
+                  onClick={() => handleUpgrade(plan.name)}
+                  disabled={plan.name === currentPlan.name}
+                >
+                  {plan.name === currentPlan.name ? "Current Plan" : "Upgrade"}
+                </button>
               </div>
             ))}
           </div>
-        </Card>
-      )}
+        </div>
 
-      {/* Payment Method */}
-      <Card className="p-6">
-        <h2 className="text-lg font-semibold mb-4">Payment Method</h2>
-        {currentPlan.price === 0 ? (
-          <p className="text-gray-500">No payment method required for free plan</p>
-        ) : (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <CreditCard className="h-5 w-5 text-gray-400" />
-              <div>
-                <p className="font-medium">•••• •••• •••• 4242</p>
-                <p className="text-sm text-gray-500">Expires 12/24</p>
-              </div>
+        {/* Billing History */}
+        {invoices.length > 0 && (
+          <div className="rounded-2xl glass border-0 p-8 animate-fade-in">
+            <h2 className="text-2xl font-semibold text-foreground mb-6">Billing History</h2>
+            <div className="space-y-3">
+              {invoices.map((invoice) => (
+                <div key={invoice.id} className="flex items-center justify-between p-6 rounded-xl glass-subtle hover-lift transition-all">
+                  <div>
+                    <p className="font-medium text-foreground">
+                      Invoice #{invoice.id.slice(-8)}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(invoice.date).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Badge className={invoice.status === "paid" 
+                      ? "bg-green-500/10 text-green-400 border-green-500/20" 
+                      : "bg-gray-500/10 text-gray-400 border-gray-500/20"
+                    }>
+                      {invoice.status}
+                    </Badge>
+                    <span className="font-medium text-foreground">${invoice.amount}</span>
+                    <button className="btn-ghost p-2">
+                      <Download className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-            <Button variant="outline">Update</Button>
           </div>
         )}
-      </Card>
+
+        {/* Payment Method */}
+        <div className="rounded-2xl glass border-0 p-8 animate-fade-in">
+          <h2 className="text-2xl font-semibold text-foreground mb-6">Payment Method</h2>
+          {currentPlan.price === 0 ? (
+            <p className="text-muted-foreground">No payment method required for free plan</p>
+          ) : (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl glass-subtle">
+                  <CreditCard className="h-6 w-6 text-purple-400" />
+                </div>
+                <div>
+                  <p className="font-medium text-foreground">•••• •••• •••• 4242</p>
+                  <p className="text-sm text-muted-foreground">Expires 12/24</p>
+                </div>
+              </div>
+              <button className="btn-secondary">Update</button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

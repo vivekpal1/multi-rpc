@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import {
   Globe,
@@ -37,18 +37,7 @@ export default function EndpointsPage() {
   const [isAddingEndpoint, setIsAddingEndpoint] = useState(false);
   const [endpointError, setEndpointError] = useState("");
 
-  useEffect(() => {
-    fetchRpcHealth();
-    fetchCustomEndpoints();
-    
-    const interval = setInterval(() => {
-      fetchRpcHealth();
-    }, 30000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchRpcHealth = async () => {
+  const fetchRpcHealth = useCallback(async () => {
     try {
       const token = await getAccessToken();
       const response = await fetch("/api/rpc/health", {
@@ -66,9 +55,9 @@ export default function EndpointsPage() {
     } finally {
       setIsLoadingHealth(false);
     }
-  };
+  }, [getAccessToken]);
 
-  const fetchCustomEndpoints = async () => {
+  const fetchCustomEndpoints = useCallback(async () => {
     try {
       const token = await getAccessToken();
       const response = await fetch("/api/rpc/endpoints", {
@@ -84,7 +73,18 @@ export default function EndpointsPage() {
     } catch (error) {
       console.error("Error fetching custom endpoints:", error);
     }
-  };
+  }, [getAccessToken]);
+
+  useEffect(() => {
+    fetchRpcHealth();
+    fetchCustomEndpoints();
+    
+    const interval = setInterval(() => {
+      fetchRpcHealth();
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, [fetchRpcHealth, fetchCustomEndpoints]);
 
   const addCustomEndpoint = async () => {
     if (!newEndpoint.url || !newEndpoint.name) {
